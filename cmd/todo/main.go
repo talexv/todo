@@ -25,13 +25,13 @@ func main() {
 	}
 
 	// defer func() {
-	// 	if err = conn.CloseConn(); err != nil {
+	// 	if err = conn.Close(); err != nil {
 	// 		log.Printf("Ошибка при закрытии соединениия c БД: %v", err)
 	// 	}
 	// }()
 
 	router := http.NewServeMux()
-	task.NewTaskHandler(router, conn)
+	task.NewHandler(router, conn)
 
 	server := http.Server{
 		Addr:              ":8081",

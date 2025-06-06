@@ -8,11 +8,11 @@ import (
 )
 
 type Handler struct {
-	DB *DB
+	db *DB
 }
 
-func NewTaskHandler(router *http.ServeMux, db *DB) {
-	handler := &Handler{DB: db}
+func NewHandler(router *http.ServeMux, db *DB) {
+	handler := &Handler{db: db}
 
 	router.HandleFunc("GET /tasks", handler.GetTasks())
 	router.HandleFunc("POST /create", handler.CreateTask())
@@ -22,7 +22,7 @@ func NewTaskHandler(router *http.ServeMux, db *DB) {
 
 func (handler *Handler) GetTasks() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tasks, err := handler.DB.GetAllTasks(r.Context())
+		tasks, err := handler.db.GetAllTasks(r.Context())
 		if err != nil {
 			http.Error(w, "ошибка при получении списка задач", http.StatusInternalServerError)
 			return
@@ -34,9 +34,9 @@ func (handler *Handler) GetTasks() http.HandlerFunc {
 
 func (handler *Handler) CreateTask() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-
-		var req Request
+		var req struct {
+			Title string `json:"title"`
+		}
 
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
@@ -49,7 +49,7 @@ func (handler *Handler) CreateTask() http.HandlerFunc {
 			return
 		}
 
-		task, err := handler.DB.InsertTask(r.Context(), req.Title)
+		task, err := handler.db.InsertTask(r.Context(), req.Title)
 		if err != nil {
 			http.Error(w, "ошибка при создании задачи", http.StatusInternalServerError)
 			return
@@ -67,7 +67,7 @@ func (handler *Handler) DeleteTask() http.HandlerFunc {
 			return
 		}
 
-		err = handler.DB.DeleteTask(r.Context(), id)
+		err = handler.db.DeleteTask(r.Context(), id)
 		if err != nil {
 			if errors.Is(err, ErrTaskNotFound) {
 				http.Error(w, "задача не найдена", http.StatusNotFound)
@@ -91,7 +91,7 @@ func (handler *Handler) UpdateStatusTask() http.HandlerFunc {
 			return
 		}
 
-		task, err := handler.DB.UpdateStatusTask(r.Context(), id)
+		task, err := handler.db.UpdateStatusTask(r.Context(), id)
 		if err != nil {
 			if errors.Is(err, ErrTaskNotFound) {
 				http.Error(w, "задача не найдена", http.StatusNotFound)

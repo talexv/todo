@@ -14,10 +14,6 @@ type Task struct {
 	Done  bool   `json:"done"`
 }
 
-type Request struct {
-	Title string `json:"title"`
-}
-
 const schemaSQL = `
 	CREATE TABLE IF NOT EXISTS tasks (
 		id bigserial primary key,
@@ -47,7 +43,7 @@ const deleteTaskSQL = `
 	DELETE FROM tasks WHERE id = $1
 `
 
-var ErrTaskNotFound = errors.New("задача не найдена")
+var ErrTaskNotFound = errors.New("task not found")
 
 type DB struct {
 	conn *pgx.Conn
@@ -56,18 +52,18 @@ type DB struct {
 func NewDB(connString string) (*DB, error) {
 	conn, err := pgx.Connect(context.Background(), connString)
 	if err != nil {
-		return nil, fmt.Errorf("NewDB: pgx.Connect: %w", err)
+		return nil, fmt.Errorf("pgx.Connect: %w", err)
 	}
 
 	_, err = conn.Exec(context.Background(), schemaSQL)
 	if err != nil {
-		return nil, fmt.Errorf("NewDB: conn.Exec: %w", err)
+		return nil, fmt.Errorf("conn.Exec: %w", err)
 	}
 
 	return &DB{conn: conn}, nil
 }
 
-func (d *DB) CloseConn() error {
+func (d *DB) Close() error {
 	err := d.conn.Close(context.Background())
 	d.conn = nil
 
@@ -79,7 +75,7 @@ func (d *DB) InsertTask(ctx context.Context, title string) (*Task, error) {
 
 	err := d.conn.QueryRow(ctx, createTaskSQL, title).Scan(&task.ID, &task.Title, &task.Done)
 	if err != nil {
-		return nil, fmt.Errorf("InsertTask: conn.QueryRow: %w", err)
+		return nil, fmt.Errorf("conn.QueryRow: %w", err)
 	}
 
 	return &task, nil
@@ -88,7 +84,7 @@ func (d *DB) InsertTask(ctx context.Context, title string) (*Task, error) {
 func (d *DB) GetAllTasks(ctx context.Context) ([]*Task, error) {
 	rows, err := d.conn.Query(ctx, getAllTasksSQL)
 	if err != nil {
-		return nil, fmt.Errorf("GetAllTasks: conn.Query: %w", err)
+		return nil, fmt.Errorf("conn.Query: %w", err)
 	}
 
 	defer rows.Close()
@@ -100,7 +96,7 @@ func (d *DB) GetAllTasks(ctx context.Context) ([]*Task, error) {
 
 		err = rows.Scan(&task.ID, &task.Title, &task.Done)
 		if err != nil {
-			return nil, fmt.Errorf("GetAllTasks: rows.Scan: %w", err)
+			return nil, fmt.Errorf("rows.Scan: %w", err)
 		}
 
 		tasks = append(tasks, task)
@@ -108,7 +104,7 @@ func (d *DB) GetAllTasks(ctx context.Context) ([]*Task, error) {
 
 	err = rows.Err()
 	if err != nil {
-		return nil, fmt.Errorf("GetAllTasks: rows iteration error: %w", err)
+		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
 	return tasks, nil
@@ -117,7 +113,7 @@ func (d *DB) GetAllTasks(ctx context.Context) ([]*Task, error) {
 func (d *DB) DeleteTask(ctx context.Context, id int64) error {
 	tag, err := d.conn.Exec(ctx, deleteTaskSQL, id)
 	if err != nil {
-		return fmt.Errorf("DeleteTask: conn.Exec: %w", err)
+		return fmt.Errorf("conn.Exec: %w", err)
 	}
 
 	if tag.RowsAffected() == 0 {
@@ -136,7 +132,7 @@ func (d *DB) UpdateStatusTask(ctx context.Context, id int64) (*Task, error) {
 			return nil, ErrTaskNotFound
 		}
 
-		return nil, fmt.Errorf("UpdateStatusTask: conn.QueryRow: %w", err)
+		return nil, fmt.Errorf("conn.QueryRow: %w", err)
 	}
 
 	return &task, nil

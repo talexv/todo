@@ -8,41 +8,49 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/talexv/todo/internal/middleware"
 	"github.com/talexv/todo/internal/task"
 )
 
 const DefaultTimeout = 5 * time.Second
 
 func main() {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatal("Ошибка загрузки .env файла")
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
+	if err := godotenv.Load(); err != nil {
+		return fmt.Errorf("ошибка загрузки .env файла: %w", err)
 	}
 
 	conn, err := task.NewDB(os.Getenv("DATABASE_URL"))
 	if err != nil {
-		log.Fatalf("Ошибка подключения к БД: %v", err)
+		return fmt.Errorf("ошибка подключения к БД: %w", err)
 	}
 
-	// defer func() {
-	// 	if err = conn.Close(); err != nil {
-	// 		log.Printf("Ошибка при закрытии соединениия c БД: %v", err)
-	// 	}
-	// }()
+	defer func() {
+		if closeErr := conn.Close(); closeErr != nil {
+			log.Printf("ошибка при закрытии соединения c БД: %v", closeErr)
+		}
+	}()
 
 	router := http.NewServeMux()
 	task.NewHandler(router, conn)
 
 	server := http.Server{
 		Addr:              ":8081",
-		Handler:           router,
+		Handler:           middleware.Recoverer(middleware.Logging(router)),
 		ReadHeaderTimeout: DefaultTimeout,
 	}
 
-	fmt.Println("HTTP сервер запущен на http://localhost:8081")
+	log.Println("HTTP сервер запущен на http://localhost:8081")
 
 	err = server.ListenAndServe()
 	if err != nil {
-		log.Fatalf("Ошибка запуска HTTP сервера: %v", err)
+		return fmt.Errorf("ошибка запуска HTTP сервера: %w", err)
 	}
+
+	return nil
 }

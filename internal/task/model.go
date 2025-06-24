@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Task struct {
@@ -46,45 +47,42 @@ const deleteTaskSQL = `
 var ErrTaskNotFound = errors.New("task not found")
 
 type DB struct {
-	conn *pgx.Conn
+	pool *pgxpool.Pool
 }
 
 func NewDB(connString string) (*DB, error) {
-	conn, err := pgx.Connect(context.Background(), connString)
+	pool, err := pgxpool.New(context.Background(), connString)
 	if err != nil {
-		return nil, fmt.Errorf("pgx.Connect: %w", err)
+		return nil, fmt.Errorf("pgxpool.New: %w", err)
 	}
 
-	_, err = conn.Exec(context.Background(), schemaSQL)
+	_, err = pool.Exec(context.Background(), schemaSQL)
 	if err != nil {
-		return nil, fmt.Errorf("conn.Exec: %w", err)
+		return nil, fmt.Errorf("pool.Exec: %w", err)
 	}
 
-	return &DB{conn: conn}, nil
+	return &DB{pool: pool}, nil
 }
 
-func (d *DB) Close() error {
-	err := d.conn.Close(context.Background())
-	d.conn = nil
-
-	return err
+func (d *DB) Close() {
+	d.pool.Close()
 }
 
 func (d *DB) InsertTask(ctx context.Context, title string) (*Task, error) {
 	var task Task
 
-	err := d.conn.QueryRow(ctx, createTaskSQL, title).Scan(&task.ID, &task.Title, &task.Done)
+	err := d.pool.QueryRow(ctx, createTaskSQL, title).Scan(&task.ID, &task.Title, &task.Done)
 	if err != nil {
-		return nil, fmt.Errorf("conn.QueryRow: %w", err)
+		return nil, fmt.Errorf("pool.QueryRow: %w", err)
 	}
 
 	return &task, nil
 }
 
 func (d *DB) GetAllTasks(ctx context.Context) ([]*Task, error) {
-	rows, err := d.conn.Query(ctx, getAllTasksSQL)
+	rows, err := d.pool.Query(ctx, getAllTasksSQL)
 	if err != nil {
-		return nil, fmt.Errorf("conn.Query: %w", err)
+		return nil, fmt.Errorf("pool.Query: %w", err)
 	}
 
 	defer rows.Close()
@@ -111,9 +109,9 @@ func (d *DB) GetAllTasks(ctx context.Context) ([]*Task, error) {
 }
 
 func (d *DB) DeleteTask(ctx context.Context, id int64) error {
-	tag, err := d.conn.Exec(ctx, deleteTaskSQL, id)
+	tag, err := d.pool.Exec(ctx, deleteTaskSQL, id)
 	if err != nil {
-		return fmt.Errorf("conn.Exec: %w", err)
+		return fmt.Errorf("pool.Exec: %w", err)
 	}
 
 	if tag.RowsAffected() == 0 {
@@ -126,13 +124,13 @@ func (d *DB) DeleteTask(ctx context.Context, id int64) error {
 func (d *DB) UpdateStatusTask(ctx context.Context, id int64) (*Task, error) {
 	var task Task
 
-	err := d.conn.QueryRow(ctx, updateStatusTaskSQL, id).Scan(&task.ID, &task.Title, &task.Done)
+	err := d.pool.QueryRow(ctx, updateStatusTaskSQL, id).Scan(&task.ID, &task.Title, &task.Done)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrTaskNotFound
 		}
 
-		return nil, fmt.Errorf("conn.QueryRow: %w", err)
+		return nil, fmt.Errorf("pool.QueryRow: %w", err)
 	}
 
 	return &task, nil

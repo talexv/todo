@@ -1,0 +1,28 @@
+name: race detector test
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  race-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Run server with race detector
+        run: |
+          CGO_ENABLED=1 go run -race ./cmd/todo/main.go &
+          SERVER_PID=$!
+          sleep 5
+
+          for ((i = 0; i < 100; i++)); do
+            curl -s http://localhost:8081/tasks > /dev/null &
+          done
+          wait
+
+          kill $SERVER_PID

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -16,7 +16,9 @@ const DefaultTimeout = 5 * time.Second
 
 func main() {
 	if err := run(); err != nil {
-		log.Fatal(err)
+		//nolint:sloglint // will be consired
+		slog.Error(err.Error())
+		os.Exit(1)
 	}
 }
 
@@ -25,19 +27,15 @@ func run() error {
 		return fmt.Errorf("ошибка загрузки .env файла: %w", err)
 	}
 
-	conn, err := task.NewDB(os.Getenv("DATABASE_URL"))
+	db, err := task.NewDB(os.Getenv("DATABASE_URL"))
 	if err != nil {
 		return fmt.Errorf("ошибка подключения к БД: %w", err)
 	}
 
-	defer func() {
-		if closeErr := conn.Close(); closeErr != nil {
-			log.Printf("ошибка при закрытии соединения c БД: %v", closeErr)
-		}
-	}()
+	defer db.Close()
 
 	router := http.NewServeMux()
-	task.NewHandler(router, conn)
+	task.NewHandler(router, db)
 
 	server := http.Server{
 		Addr:              ":8081",
@@ -45,7 +43,10 @@ func run() error {
 		ReadHeaderTimeout: DefaultTimeout,
 	}
 
-	log.Println("HTTP сервер запущен на http://localhost:8081")
+	//nolint:sloglint // will be consired
+	slog.Info("HTTP сервер запущен",
+		"url", "http://localhost:8081",
+	)
 
 	err = server.ListenAndServe()
 	if err != nil {

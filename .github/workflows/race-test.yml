@@ -9,11 +9,31 @@ on:
 jobs:
   race-test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16.9
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: todo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U user"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: stable
+      
+      - name: Create .env file
+        run: echo "DATABASE_URL=postgres://user:pass@localhost:5432/todo?sslmode=disable" > .env 
+
       - name: Run server with race detector
         run: |
           CGO_ENABLED=1 go run -race ./cmd/todo/main.go &

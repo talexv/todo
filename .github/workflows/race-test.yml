@@ -34,18 +34,6 @@ jobs:
       - name: Create .env file
         run: echo "DATABASE_URL=postgres://user:pass@postgres:5432/todo?sslmode=disable" > .env 
 
-      - name: Wait for PostgreSQL
-        run: |
-          for ((i = 0; i < 10; i++)); do
-            if pg_isready -h postgres -U user -d todo; then
-              echo "Postgres is ready"
-              exit 0
-            fi
-            sleep 3
-          done
-          echo "PostgreSQL is not ready" >&2
-          exit 1
-
       - name: Run server with race detector
         run: |
           CGO_ENABLED=1 go run -race ./cmd/todo/main.go &

@@ -27,7 +27,12 @@ func run() error {
 		return fmt.Errorf("ошибка загрузки .env файла: %w", err)
 	}
 
-	db, err := task.NewDB(os.Getenv("DATABASE_URL"))
+	connString := os.Getenv("DATABASE_URL")
+	if connString == "" {
+		return fmt.Errorf("переменная DATABASE_URL не найдена")
+	}
+
+	db, err := task.NewDB(connString)
 	if err != nil {
 		return fmt.Errorf("ошибка подключения к БД: %w", err)
 	}

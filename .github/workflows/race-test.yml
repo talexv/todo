@@ -36,9 +36,13 @@ jobs:
 
       - name: Run server with race detector
         run: |
-          go build -race -o server ./cmd/todo
-          ./server &
-          SERVER_PID=$!
+          go build -race -o todo-app ./cmd/todo
+          ./todo-app &
+          APP_PID=$!
+
+          ps -ef | grep todo-app
+          echo "APP_PID=$APP_PID"
+
           sleep 10
 
           for ((i = 0; i < 100; i++)); do
@@ -46,4 +50,4 @@ jobs:
           done
           wait
 
-          kill $SERVER_PID
+          kill $APP_PID

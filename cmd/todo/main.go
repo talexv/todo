@@ -16,7 +16,7 @@ const DefaultTimeout = 5 * time.Second
 
 func main() {
 	if err := run(); err != nil {
-		//nolint:sloglint // will be consired
+		//nolint:sloglint // will be considered later
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
@@ -43,7 +43,7 @@ func run() error {
 		ReadHeaderTimeout: DefaultTimeout,
 	}
 
-	//nolint:sloglint // will be consired
+	//nolint:sloglint // will be considered later
 	slog.Info("HTTP сервер запущен",
 		"url", "http://localhost:8081",
 	)

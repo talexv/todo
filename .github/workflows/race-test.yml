@@ -36,9 +36,10 @@ jobs:
 
       - name: Run server with race detector
         run: |
-          CGO_ENABLED=1 go run -race ./cmd/todo/main.go &
+          go build -race -o server ./cmd/todo
+          ./server &
           SERVER_PID=$!
-          sleep 5
+          sleep 10
 
           for ((i = 0; i < 100; i++)); do
             curl -s http://localhost:8081/tasks > /dev/null &

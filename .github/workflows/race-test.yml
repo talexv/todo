@@ -32,7 +32,7 @@ jobs:
           go-version: stable
       
       - name: Create .env file
-        run: echo "DATABASE_URL=postgres://user:pass@localhost:5432/todo?sslmode=disable" > .env 
+        run: echo "DATABASE_URL=postgres://user:pass@postgres:5432/todo?sslmode=disable" > .env 
 
       - name: Run server with race detector
         run: |

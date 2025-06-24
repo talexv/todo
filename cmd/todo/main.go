@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -29,7 +30,7 @@ func run() error {
 
 	connString := os.Getenv("DATABASE_URL")
 	if connString == "" {
-		return fmt.Errorf("переменная DATABASE_URL не найдена")
+		return errors.New("переменная DATABASE_URL не найдена")
 	}
 
 	db, err := task.NewDB(connString)

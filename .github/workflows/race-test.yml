@@ -40,8 +40,8 @@ jobs:
           ./todo-app &
           APP_PID=$!
 
-          ps -ef | grep todo-app
-          echo "APP_PID=$APP_PID"
+          # ps -ef | grep todo-app
+          # echo "APP_PID=$APP_PID"
 
           sleep 10
 
@@ -50,4 +50,4 @@ jobs:
           done
           wait
 
-          kill $APP_PID
+          kill -9 $APP_PID

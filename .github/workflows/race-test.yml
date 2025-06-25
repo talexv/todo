@@ -45,9 +45,15 @@ jobs:
 
           sleep 10
 
+          echo "Send requests..."
           for ((i = 0; i < 100; i++)); do
             curl http://localhost:8081/tasks > /dev/null 2>&1 &
           done
-          wait
 
+          echo "Waiting for requests to complete..."
+          sleep 5
+          # wait
+
+          echo "Stop server"
           kill $APP_PID
+          echo "Done."

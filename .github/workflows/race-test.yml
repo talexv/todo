@@ -46,8 +46,8 @@ jobs:
           sleep 10
 
           for ((i = 0; i < 100; i++)); do
-            curl -s http://localhost:8081/tasks > /dev/null &
+            curl http://localhost:8081/tasks > /dev/null &
           done
           wait
 
-          kill -9 $APP_PID
+          kill $APP_PID

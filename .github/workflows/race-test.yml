@@ -40,13 +40,13 @@ jobs:
           ./todo-app &
           APP_PID=$!
 
-          # ps -ef | grep todo-app
-          # echo "APP_PID=$APP_PID"
+          ps -ef | grep todo-app
+          echo "APP_PID=$APP_PID"
 
           sleep 10
 
           for ((i = 0; i < 100; i++)); do
-            curl http://localhost:8081/tasks > /dev/null &
+            curl http://localhost:8081/tasks > /dev/null 2>&1 &
           done
           wait
 

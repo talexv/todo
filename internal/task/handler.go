@@ -17,8 +17,8 @@ func NewHandler(router *http.ServeMux, db *DB) {
 	router.HandleFunc("GET /tasks", handler.GetTasks())
 	router.HandleFunc("POST /create", handler.CreateTask())
 	router.HandleFunc("PATCH /tasks/{id}/done", handler.UpdateStatusTask())
-	router.HandleFunc("DELETE /tasks/{id}/delete", handler.DeleteTask())
 	// router.HandleFunc("GET /panic", handler.TestPanic())
+	router.HandleFunc("DELETE /tasks/{id}/delete", handler.DeleteTask())
 }
 
 func (handler *Handler) GetTasks() http.HandlerFunc {

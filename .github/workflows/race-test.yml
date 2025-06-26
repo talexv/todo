@@ -1,0 +1,59 @@
+name: race detector test
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  race-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16.9
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: todo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U user -d todo"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      
+      - name: Create .env file
+        run: echo "DATABASE_URL=postgres://user:pass@localhost:5432/todo?sslmode=disable" > .env 
+
+      - name: Run server with race detector
+        run: |
+          go build -race -o todo-app ./cmd/todo
+          ./todo-app &
+          APP_PID=$!
+
+          ps -ef | grep todo-app
+          echo "APP_PID=$APP_PID"
+
+          sleep 10
+
+          echo "Send requests..."
+          for ((i = 0; i < 100; i++)); do
+            curl http://localhost:8081/tasks > /dev/null 2>&1 &
+          done
+
+          echo "Waiting for requests to complete..."
+          sleep 5
+          # wait
+
+          echo "Stop server"
+          kill $APP_PID
+          echo "Done."

@@ -1,0 +1,39 @@
+name: race detector test
+on:
+  push:
+    branches:
+      - main
+      - master
+      - dev
+  pull_request:
+
+jobs:
+  race-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16.9
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U user -d test_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE_URL: postgres://user:pass@localhost:5432/test_db?sslmode=disable
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      
+      - name: Run tests with race detector
+        run: go test -race -v ./...

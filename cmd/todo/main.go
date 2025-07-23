@@ -15,17 +15,27 @@ import (
 
 const DefaultTimeout = 5 * time.Second
 
+//nolint:sloglint, noctx // will be considered later
 func main() {
 	if err := run(); err != nil {
-		//nolint:sloglint // will be considered later
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
 }
 
+func setupRouter(db *task.DB) http.Handler {
+	router := http.NewServeMux()
+	task.NewHandler(router, db)
+
+	return middleware.Recoverer(middleware.Logging(router))
+}
+
+//nolint:sloglint, noctx // will be considered later
 func run() error {
 	if err := godotenv.Load(); err != nil {
-		return fmt.Errorf("ошибка загрузки .env файла: %w", err)
+		slog.Warn("файл .env не найден",
+			"error", err,
+		)
 	}
 
 	connString := os.Getenv("DATABASE_URL")
@@ -40,16 +50,12 @@ func run() error {
 
 	defer db.Close()
 
-	router := http.NewServeMux()
-	task.NewHandler(router, db)
-
 	server := http.Server{
 		Addr:              ":8081",
-		Handler:           middleware.Recoverer(middleware.Logging(router)),
+		Handler:           setupRouter(db),
 		ReadHeaderTimeout: DefaultTimeout,
 	}
 
-	//nolint:sloglint // will be considered later
 	slog.Info("HTTP сервер запущен",
 		"url", "http://localhost:8081",
 	)

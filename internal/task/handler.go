@@ -109,7 +109,7 @@ func (handler *Handler) UpdateStatusTask() http.HandlerFunc {
 }
 
 func writeJSON(w http.ResponseWriter, data any, statusCode int) {
-	w.Header().Set("Content-type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	_ = json.NewEncoder(w).Encode(data)
 }

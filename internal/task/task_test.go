@@ -46,8 +46,6 @@ func clearTestDB(t *testing.T) {
 func initTestDB(t *testing.T) *task.DB {
 	t.Helper()
 
-	clearTestDB(t)
-
 	connString := initTestEnv(t)
 	db, err := task.NewDB(connString)
 	require.NoError(t, err)
@@ -112,6 +110,10 @@ func TestCreateTask(t *testing.T) {
 
 	require.Equal(t, payload["title"], createdTask.Title)
 	require.False(t, createdTask.Done)
+
+	t.Cleanup(func() {
+		clearTestDB(t)
+	})
 }
 
 func TestUpdateStatusTask(t *testing.T) {
@@ -135,6 +137,10 @@ func TestUpdateStatusTask(t *testing.T) {
 	require.Equal(t, newTask.ID, updatedTask.ID)
 	require.Equal(t, newTask.Title, updatedTask.Title)
 	require.True(t, updatedTask.Done)
+
+	t.Cleanup(func() {
+		clearTestDB(t)
+	})
 }
 
 func TestDeleteTask(t *testing.T) {
@@ -150,4 +156,8 @@ func TestDeleteTask(t *testing.T) {
 
 	defer res.Body.Close()
 	require.Equal(t, http.StatusNoContent, res.StatusCode)
+
+	t.Cleanup(func() {
+		clearTestDB(t)
+	})
 }

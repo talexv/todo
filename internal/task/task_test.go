@@ -38,7 +38,8 @@ func clearTestDB(t *testing.T) {
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, connString)
 	require.NoError(t, err)
-	_, err = pool.Exec(ctx, `TRUNCATE tasks RESTART IDENTITY`)
+	// _, err = pool.Exec(ctx, `TRUNCATE tasks RESTART IDENTITY`)
+	_, err = pool.Exec(ctx, `DELETE FROM tasks`)
 	require.NoError(t, err)
 	pool.Close()
 }
@@ -66,25 +67,6 @@ func initTestHandler(t *testing.T) (http.Handler, *task.DB) {
 	})
 
 	return finalHandler, db
-}
-
-func TestGetTaskParallel(t *testing.T) {
-	t.Parallel()
-	handler, _ := initTestHandler(t)
-
-	for i := range 100 {
-		t.Run(fmt.Sprintf("subtest-%d", i), func(t *testing.T) {
-			t.Parallel()
-
-			req := httptest.NewRequest(http.MethodGet, "/tasks", nil)
-			w := httptest.NewRecorder()
-			handler.ServeHTTP(w, req)
-			res := w.Result()
-
-			defer res.Body.Close()
-			require.Equal(t, http.StatusOK, res.StatusCode)
-		})
-	}
 }
 
 func TestCreateTask(t *testing.T) {
@@ -160,4 +142,23 @@ func TestDeleteTask(t *testing.T) {
 	t.Cleanup(func() {
 		clearTestDB(t)
 	})
+}
+
+func TestGetTaskParallel(t *testing.T) {
+	t.Parallel()
+	handler, _ := initTestHandler(t)
+
+	for i := range 100 {
+		t.Run(fmt.Sprintf("subtest-%d", i), func(t *testing.T) {
+			t.Parallel()
+
+			req := httptest.NewRequest(http.MethodGet, "/tasks", nil)
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, req)
+			res := w.Result()
+
+			defer res.Body.Close()
+			require.Equal(t, http.StatusOK, res.StatusCode)
+		})
+	}
 }

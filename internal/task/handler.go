@@ -17,7 +17,6 @@ func NewHandler(router *http.ServeMux, db *DB) {
 	router.HandleFunc("GET /tasks", handler.GetTasks())
 	router.HandleFunc("POST /create", handler.CreateTask())
 	router.HandleFunc("PATCH /tasks/{id}/done", handler.UpdateStatusTask())
-	// router.HandleFunc("GET /panic", handler.TestPanic())
 	router.HandleFunc("DELETE /tasks/{id}/delete", handler.DeleteTask())
 }
 
@@ -124,9 +123,3 @@ func parseID(r *http.Request) (int64, error) {
 
 	return id, nil
 }
-
-// func (handler *Handler) TestPanic() http.HandlerFunc {
-// 	return func(http.ResponseWriter, *http.Request) {
-// 		panic("паника")
-// 	}
-// }

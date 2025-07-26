@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -18,10 +19,21 @@ import (
 	"github.com/talexv/todo/internal/task"
 )
 
+//nolint:gochecknoglobals // TestMain cannot directly pass values to tests
+var envFilePath string
+
+func TestMain(m *testing.M) {
+	flag.StringVar(&envFilePath, "env", "./.env", "путь до файла .env")
+	flag.Parse()
+
+	exitcode := m.Run()
+	os.Exit(exitcode)
+}
+
 func initTestEnv(t *testing.T) string {
 	t.Helper()
 
-	if err := godotenv.Load(".env.test"); err != nil {
+	if err := godotenv.Load(envFilePath); err != nil {
 		t.Logf("файл .env.test не найден: %v", err)
 	}
 
@@ -38,8 +50,7 @@ func clearTestDB(t *testing.T) {
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, connString)
 	require.NoError(t, err)
-	// _, err = pool.Exec(ctx, `TRUNCATE tasks RESTART IDENTITY`)
-	_, err = pool.Exec(ctx, `DELETE FROM tasks`)
+	_, err = pool.Exec(ctx, `TRUNCATE tasks RESTART IDENTITY`)
 	require.NoError(t, err)
 	pool.Close()
 }
@@ -144,8 +155,8 @@ func TestDeleteTask(t *testing.T) {
 	})
 }
 
+//nolint:tparallel // disabled to avoid conflicts with other tests
 func TestGetTaskParallel(t *testing.T) {
-	t.Parallel()
 	handler, _ := initTestHandler(t)
 
 	for i := range 100 {

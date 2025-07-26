@@ -16,11 +16,14 @@ type Task struct {
 }
 
 const schemaSQL = `
+	BEGIN;
+	SELECT pg_advisory_xact_lock(12345);
 	CREATE TABLE IF NOT EXISTS tasks (
 		id bigserial primary key,
 		title text NOT NULL,
 		done BOOLEAN default false
 	);
+	COMMIT;
 `
 
 const getAllTasksSQL = `

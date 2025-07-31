@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+//nolint:noctx // will be considered later
 func Recoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
